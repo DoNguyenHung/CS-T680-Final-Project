@@ -1,0 +1,4 @@
+#!/bin/bash
+curl -d '{ "pollId": 1, "pollTitle": "Favorite Pet", "pollQuestion": "What type of pet do you like best?", "pollOptions": [{"pollOptionId": 1, "pollOptionText": "Dog"}, {"pollOptionId": 2, "pollOptionText": "Cat"}, {"pollOptionId": 3, "pollOptionText": "Fish"}, {"pollOptionId": 4, "pollOptionText": "Bird"}, {"pollOptionId": 5, "pollOptionText": "NONE"}] }' -H "Content-Type: application/json" -X POST http://localhost:1080/polls/1
+# curl -d '{ "id": 2, "firstname": "Jane", "lastname": "Schmoe", "votehistory": [{"pollid": 12342, "votedate": "2021-08-16T14:30:45.00Z"}] }' -H "Content-Type: application/json" -X POST http://localhost:1080/voters/2
+# curl -d '{ "id": 3, "firstname": "Bob", "lastname": "Ross", "votehistory": [{"pollid": 54323, "votedate": "2021-08-17T14:30:45.00Z"}] }' -H "Content-Type: application/json" -X POST http://localhost:1080/voters/3

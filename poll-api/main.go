@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"drexel.edu/todo/api"
+	"drexel.edu/todo/poll-api/api"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -65,36 +65,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	r.GET("/voters", apiHandler.GetAllVoterResources)
+	r.GET("/polls", apiHandler.GetAllPollResources)
 
-	r.GET("/voters/:id", apiHandler.GetSingleVoterResource)
+	r.GET("/polls/:id", apiHandler.GetSinglePollResource)
 	// Create a voters resource with id = :id, initialize the polls slice to an
 	// empty slice
-	r.POST("/voters/:id", apiHandler.AddVoter)
+	r.POST("/polls/:id", apiHandler.AddPoll)
 
-	r.GET("/voters/:id/polls", apiHandler.GetVoterHistory)
+	r.GET("/polls/health", apiHandler.HealthCheck)
 
-	r.GET("/voters/:id/polls/:pollid", apiHandler.GetVoterPollData)
-	// Look up the voter with id = :id, then add the poll with pollid = :pollid to
-	// the internal poll slice
-	// POST /voters/22/polls/3
-	// Does voter 22 exist, if not return 404 error; if voter 22 exists, add
-	// pollid 3 to the internal poll slice
-	// ***** Does voter 22 exist, if not, create voter 22 (WHICH ASSUMES ALL THE
-	// VOTER INFO IS IN THE PAYLOAD), then voter 22, then
-	// add pollid 3 to the NEW voter 22 resource. If not, follow above
-	r.POST("/voters/:id/polls/:pollid", apiHandler.AddVoterPollData)
+	r.DELETE("/polls", apiHandler.DeleteAllPolls)
 
-	r.GET("/voters/health", apiHandler.HealthCheck)
-
-	// Extra Credit
-	r.DELETE("/voters", apiHandler.DeleteAllVoters)
-
-	r.DELETE("/voters/:id", apiHandler.DeleteVoter)
-
-	r.DELETE("/voters/:id/polls/:pollid", apiHandler.DeletePoll)
-
-	r.PUT("/voters", apiHandler.UpdateVoter)
+	r.DELETE("/polls/:id", apiHandler.DeletePoll)
 
 	serverPath := fmt.Sprintf("%s:%d", hostFlag, portFlag)
 	r.Run(serverPath)
