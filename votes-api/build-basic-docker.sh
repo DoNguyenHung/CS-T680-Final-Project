@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build --tag vote-api-basic:v1  -f ./dockerfile.basic .
+docker build --tag votes-api-basic:v1  -f ./dockerfile.basic .

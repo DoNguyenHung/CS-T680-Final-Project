@@ -12,7 +12,7 @@ COPY . .
 RUN go mod download
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /voter-api
+RUN CGO_ENABLED=0 GOOS=linux go build -o /votes-api
 
 # Expose port
 EXPOSE 1080
@@ -22,4 +22,4 @@ EXPOSE 1080
 ENV REDIS_URL=host.docker.internal:6379
 
 # Run
-CMD ["/voter-api"]
+CMD ["/votes-api"]

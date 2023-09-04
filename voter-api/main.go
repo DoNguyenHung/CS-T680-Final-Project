@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"drexel.edu/todo/voter-api/api"
+	"drexel.edu/voter-api/api"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )

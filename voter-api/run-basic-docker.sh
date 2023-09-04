@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run -it --rm -p 1080:1080 voter-api-basic:v1
+docker run -it --rm -p 2080:2080 voter-api-basic:v1

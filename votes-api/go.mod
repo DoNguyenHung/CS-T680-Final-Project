@@ -1,4 +1,4 @@
-module drexel.edu/poll-api
+module drexel.edu/votes-api
 
 go 1.20
 

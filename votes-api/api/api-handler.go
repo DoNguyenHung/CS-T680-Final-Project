@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"drexel.edu/todo/votes-api/db"
+	"drexel.edu/votes-api/db"
 	"github.com/gin-gonic/gin"
 )
 

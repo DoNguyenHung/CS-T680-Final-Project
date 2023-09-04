@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"drexel.edu/todo/votes-api/api"
+	"drexel.edu/votes-api/api"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +46,7 @@ func processCmdLineFlags() {
 	//We set this up as a flag so that we can overwrite it on the command line if
 	//needed
 	flag.StringVar(&hostFlag, "h", "0.0.0.0", "Listen on all interfaces")
-	flag.UintVar(&portFlag, "p", 1080, "Default Port")
+	flag.UintVar(&portFlag, "p", 3080, "Default Port")
 
 	flag.Parse()
 }

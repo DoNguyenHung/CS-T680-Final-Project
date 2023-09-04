@@ -1,2 +1,2 @@
 #!/bin/bash
-docker exec -it vote-cache redis-cli
+docker exec -it votes-cache redis-cli
