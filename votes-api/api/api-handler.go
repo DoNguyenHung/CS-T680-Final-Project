@@ -1,88 +1,149 @@
 package api
 
 import (
+	"context"
+	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 
 	"drexel.edu/votes-api/db"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
+	"github.com/nitishm/go-rejson/v4"
+
+	"github.com/go-resty/resty/v2"
 )
 
-// The api package creates and maintains a reference to the data handler
-// this is a good design practice
-type VoteAPI struct {
-	db *db.VoteList
+type cache struct {
+	client  *redis.Client
+	helper  *rejson.Handler
+	context context.Context
 }
 
-func New() (*VoteAPI, error) {
+type VoteAPI struct {
+	cache
+	voterAPIURL string
+	pollAPIURL  string
+	apiClient   *resty.Client
+	db          *db.VoteList
+}
+
+func NewVoteAPI(location string, voterAPIURL string, pollAPIURL string) (*VoteAPI, error) {
+	apiClient := resty.New()
 	dbHandler, err := db.NewVoteList()
-	if err != nil {
-		return nil, err
+
+	//Connect to redis.  Other options can be provided, but the
+	//defaults are OK
+	client := redis.NewClient(&redis.Options{
+		Addr: location,
+	})
+
+	//We use this context to coordinate betwen our go code and
+	//the redis operaitons
+	ctx := context.Background()
+
+	//This is the reccomended way to ensure that our redis connection
+	//is working
+	err2 := client.Ping(ctx).Err()
+	if err2 != nil {
+		log.Println("Error connecting to redis" + err.Error())
+		return nil, err2
 	}
 
-	return &VoteAPI{db: dbHandler}, nil
+	jsonHelper := rejson.NewReJSONHandler()
+	jsonHelper.SetGoRedisClientWithContext(ctx, client)
+
+	//Return a pointer to a new ToDo struct
+	return &VoteAPI{
+		cache: cache{
+			client:  client,
+			helper:  jsonHelper,
+			context: ctx,
+		},
+		voterAPIURL: voterAPIURL,
+		pollAPIURL:  pollAPIURL,
+		db:          dbHandler,
+		apiClient:   apiClient,
+	}, nil
 }
 
-//Below we implement the API functions.  Some of the framework
-//things you will see include:
-//   1) How to extract a parameter from the URL, for example
-//	  the id parameter in /todo/:id
-//   2) How to extract the body of a POST request
-//   3) How to return JSON and a correctly formed HTTP status code
-//	  for example, 200 for OK, 404 for not found, etc.  This is done
-//	  using the c.JSON() function
-//   4) How to return an error code and abort the request.  This is
-//	  done using the c.AbortWithStatus() function
+func (v *VoteAPI) GetVoteByVoter(c *gin.Context) {
 
-// implementation for GET /todo
-// returns all todos
-func (v *VoteAPI) GetAllVoteResources(c *gin.Context) {
-
-	voteList, err := v.db.GetAllVotes()
-	if err != nil {
-		log.Println("Error Getting All Votes: ", err)
-		c.AbortWithStatus(http.StatusNotFound)
+	v1Id := c.Param("id")
+	if v1Id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
 		return
 	}
-	//Note that the database returns a nil slice if there are no items
-	//in the database.  We need to convert this to an empty slice
-	//so that the JSON marshalling works correctly.  We want to return
-	//an empty slice, not a nil slice. This will result in the json being []
-	if voteList == nil {
-		voteList = make([]db.Vote, 0)
+
+	cacheKey := "voterlist:" + v1Id
+	rlBytes, err := v.helper.JSONGet(cacheKey, ".")
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Could not find votes in cache with id=" + cacheKey})
+		return
 	}
+
+	var v1 db.Vote
+	err = json.Unmarshal(rlBytes.([]byte), &v1)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cached data seems to be wrong type"})
+		return
+	}
+
+	c.JSON(http.StatusOK, v1)
+}
+
+func (v *VoteAPI) GetAllVotes(c *gin.Context) {
+
+	var voteList []db.Vote
+	var voteItem db.Vote
+
+	//Lets query redis for all of the items
+	voterPattern := "voterlist:*"
+	voterKs, _ := v.client.Keys(v.context, voterPattern).Result()
+	for _, key := range voterKs {
+		err := v.getItemFromRedis(key, &voteItem)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find reading list in cache with id=" + key})
+			return
+		}
+		voteList = append(voteList, voteItem)
+	}
+
+	// pollPattern := "polllist:*"
+	// pollKs, _ := v.client.Keys(v.context, pollPattern).Result()
+	// for _, key := range pollKs {
+	// 	err := v.getItemFromRedis(key, &voteItem)
+	// 	if err != nil {
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find reading list in cache with id=" + key})
+	// 		return
+	// 	}
+	// 	voteList = append(voteList, voteItem)
+	// }
 
 	c.JSON(http.StatusOK, voteList)
 }
 
-// implementation for GET /todo/:id
-// returns a single todo
-func (v *VoteAPI) GetSingleVoteResource(c *gin.Context) {
+// Helper to return a ToDoItem from redis provided a key
+func (v *VoteAPI) getItemFromRedis(key string, rl *db.Vote) error {
 
-	//Note go is minimalistic, so we have to get the
-	//id parameter using the Param() function, and then
-	//convert it to an int64 using the strconv package
-	idS := c.Param("id")
-	id64, err := strconv.ParseInt(idS, 10, 32)
+	//Lets query redis for the item, note we can return parts of the
+	//json structure, the second parameter "." means return the entire
+	//json structure
+	itemObject, err := v.helper.JSONGet(key, ".")
 	if err != nil {
-		log.Println("Error converting id to int64: ", err)
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+		return err
 	}
 
-	//Note that ParseInt always returns an int64, so we have to
-	//convert it to an int before we can use it.
-	vote, err := v.db.GetSingleVoterResource(uint(id64))
+	//JSONGet returns an "any" object, or empty interface,
+	//we need to convert it to a byte array, which is the
+	//underlying type of the object, then we can unmarshal
+	//it into our ToDoItem struct
+	err = json.Unmarshal(itemObject.([]byte), rl)
 	if err != nil {
-		log.Println("Item not found: ", err)
-		c.AbortWithStatus(http.StatusNotFound)
-		return
+		return err
 	}
 
-	//Git will automatically convert the struct to JSON
-	//and set the content-type header to application/json
-	c.JSON(http.StatusOK, vote)
+	return nil
 }
 
 // implementation for POST /todo
@@ -115,57 +176,4 @@ func (v *VoteAPI) AddVote(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, vote)
-}
-
-// implementation for DELETE /todo/:id
-// deletes a todo
-func (v *VoteAPI) DeleteVote(c *gin.Context) {
-	idS := c.Param("id")
-	id64, _ := strconv.ParseInt(idS, 10, 32)
-
-	if err := v.db.DeleteVote(uint(id64)); err != nil {
-		log.Println("Error deleting item: ", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
-// implementation for DELETE /todo
-// deletes all todos
-func (v *VoteAPI) DeleteAllVotes(c *gin.Context) {
-
-	if err := v.db.DeleteAll(); err != nil {
-		log.Println("Error deleting all items: ", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
-/*   SPECIAL HANDLERS FOR DEMONSTRATION - CRASH SIMULATION AND HEALTH CHECK */
-
-// implementation for GET /crash
-// This simulates a crash to show some of the benefits of the
-// gin framework
-func (v *VoteAPI) CrashSim(c *gin.Context) {
-	//panic() is go's version of throwing an exception
-	panic("Simulating an unexpected crash")
-}
-
-// implementation of GET /health. It is a good practice to build in a
-// health check for your API.  Below the results are just hard coded
-// but in a real API you can provide detailed information about the
-// health of your API with a Health Check
-func (v *VoteAPI) HealthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK,
-		gin.H{
-			"status":             "ok",
-			"version":            "1.0.0",
-			"uptime":             100,
-			"users_processed":    1000,
-			"errors_encountered": 10,
-		})
 }

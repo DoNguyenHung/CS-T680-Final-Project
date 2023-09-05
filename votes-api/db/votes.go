@@ -30,10 +30,10 @@ type cache struct {
 }
 
 type Vote struct {
-	VoteID    uint `json:"voteId"`
-	VoterID   uint `json:"voterId"`
-	PollID    uint `json:"pollId"`
-	VoteValue uint `json:"voteValue"`
+	VoteID    uint   `json:"voteId"`
+	VoterID   string `json:"voterId"`
+	PollID    string `json:"pollId"`
+	VoteValue uint   `json:"voteValue"`
 }
 
 type VoteList struct {
@@ -47,7 +47,7 @@ type VoteList struct {
 // THESE ARE THE PUBLIC FUNCTIONS THAT SUPPORT OUR TODO APP
 //------------------------------------------------------------
 
-func NewSampleVote(voteId uint, pollId uint, voterId uint, voteValue uint) *Vote {
+func NewSampleVote(voteId uint, pollId string, voterId string, voteValue uint) *Vote {
 	return &Vote{
 		VoteID:    voteId,
 		PollID:    pollId,
@@ -60,11 +60,12 @@ func NewVoteList() (*VoteList, error) {
 
 	//We will use an override if the REDIS_URL is provided as an environment
 	//variable, which is the preferred way to wire up a docker container
-	redisUrl := os.Getenv("REDIS_URL")
+	redisUrl := os.Getenv("CACHE_URL")
 	//This handles the default condition
 	if redisUrl == "" {
 		redisUrl = RedisDefaultLocation
 	}
+	log.Println("using REDIS at: ", redisUrl)
 	return NewWithCacheInstance(redisUrl)
 
 }

@@ -3,81 +3,95 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
 
 	"drexel.edu/votes-api/api"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
+// TODO:
+//			GetAllVoters
+//			GetVoteByVoter
+
 // Global variables to hold the command line flags to drive the todo CLI
 // application
 var (
-	hostFlag string
-	portFlag uint
+	hostFlag    string
+	portFlag    uint
+	cacheURL    string
+	voterAPIURL string
+	pollAPIURL  string
 )
 
-// processCmdLineFlags parses the command line flags for our CLI
-//
-// TODO: This function uses the flag package to parse the command line
-//		 flags.  The flag package is not very flexible and can lead to
-//		 some confusing code.
-
-//			 REQUIRED:     Study the code below, and make sure you understand
-//						   how it works.  Go online and readup on how the
-//						   flag package works.  Then, write a nice comment
-//				  		   block to document this function that highights that
-//						   you understand how it works.
-//
-//			 EXTRA CREDIT: The best CLI and command line processor for
-//						   go is called Cobra.  Refactor this function to
-//						   use it.  See github.com/spf13/cobra for information
-//						   on how to use it.
-//
-//	 YOUR ANSWER: <GOES HERE>
 func processCmdLineFlags() {
+	// flag.StringVar(&hostFlag, "h", "0.0.0.0", "Listen on all interfaces")
+	// flag.UintVar(&portFlag, "p", 3080, "Default Port")
 
-	//Note some networking lingo, some frameworks start the server on localhost
-	//this is a local-only interface and is fine for testing but its not accessible
-	//from other machines.  To make the server accessible from other machines, we
-	//need to listen on an interface, that could be an IP address, but modern
-	//cloud servers may have multiple network interfaces for scale.  With TCP/IP
-	//the address 0.0.0.0 instructs the network stack to listen on all interfaces
-	//We set this up as a flag so that we can overwrite it on the command line if
-	//needed
 	flag.StringVar(&hostFlag, "h", "0.0.0.0", "Listen on all interfaces")
-	flag.UintVar(&portFlag, "p", 3080, "Default Port")
+	flag.StringVar(&voterAPIURL, "voterapi", "http://localhost:1080", "Default endpoint for Voter API")
+	flag.StringVar(&pollAPIURL, "pollapi", "http://localhost:1080", "Default endpoint for Poll API")
+	flag.StringVar(&cacheURL, "c", "0.0.0.0:6379", "Default cache location")
+	flag.UintVar(&portFlag, "p", 1080, "Default Port")
 
 	flag.Parse()
+}
+
+func envVarOrDefault(envVar string, defaultVal string) string {
+	envVal := os.Getenv(envVar)
+	if envVal != "" {
+		return envVal
+	}
+	return defaultVal
+}
+
+func setupParms() {
+	//first process any command line flags
+	processCmdLineFlags()
+
+	//now process any environment variables
+	cacheURL = envVarOrDefault("CACHE_URL", cacheURL)
+	voterAPIURL = envVarOrDefault("VOTER_API_URL", voterAPIURL)
+	pollAPIURL = envVarOrDefault("POLL_API_URL", pollAPIURL)
+	hostFlag = envVarOrDefault("RLAPI_HOST", hostFlag)
+
+	pfNew, err := strconv.Atoi(envVarOrDefault("RLAPI_PORT", fmt.Sprintf("%d", portFlag)))
+	//only update the port if we were able to convert the env var to an int, else
+	//we will use the default we got from the command line, or command line defaults
+	if err == nil {
+		portFlag = uint(pfNew)
+	}
+
 }
 
 // main is the entry point for our todo API application.  It processes
 // the command line flags and then uses the db package to perform the
 // requested operation
 func main() {
-	processCmdLineFlags()
+	//this will allow the user to override key parameters and also setup defaults
+	setupParms()
+	log.Println("Init/cacheURL: " + cacheURL)
+	log.Println("Init/voterAPIURL: " + voterAPIURL)
+	log.Println("Init/pollAPIURL: " + pollAPIURL)
+	log.Println("Init/hostFlag: " + hostFlag)
+	log.Printf("Init/portFlag: %d", portFlag)
+
+	apiHandler, err := api.NewVoteAPI(cacheURL, voterAPIURL, pollAPIURL)
+
+	if err != nil {
+		panic(err)
+	}
+
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	apiHandler, err := api.New()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	r.GET("/votes", apiHandler.GetAllVoteResources)
-
-	r.GET("/votes/:id", apiHandler.GetSingleVoteResource)
-	// Create a voters resource with id = :id, initialize the polls slice to an
-	// empty slice
 	r.POST("/votes/:id", apiHandler.AddVote)
+	r.GET("/votes", apiHandler.GetAllVotes)
+	r.GET("/votes/:id", apiHandler.GetVoteByVoter)
 
-	r.GET("/votes/health", apiHandler.HealthCheck)
-
-	r.DELETE("/votes", apiHandler.DeleteAllVotes)
-
-	r.DELETE("/votes/:id", apiHandler.DeleteVote)
-
+	//For now we will just support gets
 	serverPath := fmt.Sprintf("%s:%d", hostFlag, portFlag)
 	r.Run(serverPath)
 }
