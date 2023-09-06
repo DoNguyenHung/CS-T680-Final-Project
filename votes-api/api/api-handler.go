@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"drexel.edu/votes-api/db"
 	"github.com/gin-gonic/gin"
@@ -67,23 +68,22 @@ func NewVoteAPI(location string, voterAPIURL string, pollAPIURL string) (*VoteAP
 	}, nil
 }
 
-func (v *VoteAPI) GetVoteByVoter(c *gin.Context) {
-
-	v1Id := c.Param("id")
-	if v1Id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+func (v *VoteAPI) GetVote(c *gin.Context) {
+	voteId := c.Param("id")
+	if voteId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No vote ID provided"})
 		return
 	}
 
-	cacheKey := "voterlist:" + v1Id
-	rlBytes, err := v.helper.JSONGet(cacheKey, ".")
+	cacheKey := "vote:" + voteId
+	v1Bytes, err := v.helper.JSONGet(cacheKey, ".")
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Could not find votes in cache with id=" + cacheKey})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Could not find vote in cache with id=" + cacheKey})
 		return
 	}
 
 	var v1 db.Vote
-	err = json.Unmarshal(rlBytes.([]byte), &v1)
+	err = json.Unmarshal(v1Bytes.([]byte), &v1)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cached data seems to be wrong type"})
 		return
@@ -92,15 +92,138 @@ func (v *VoteAPI) GetVoteByVoter(c *gin.Context) {
 	c.JSON(http.StatusOK, v1)
 }
 
-func (v *VoteAPI) GetAllVotes(c *gin.Context) {
+func (v *VoteAPI) GetVoterByVote(c *gin.Context) {
+	voteId := c.Param("id")
+	if voteId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No vote ID provided"})
+		return
+	}
 
+	// voterId := c.Param("voterid")
+	// if voterId == "" {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+	// 	return
+	// }
+
+	cacheKey := "vote:" + voteId
+	var v1 db.Vote
+	err := v.getItemFromRedis(cacheKey, &v1)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Could not find vote in cache with id=" + cacheKey})
+		return
+	}
+
+	voterLocation := v1.VoterID
+
+	voterURL := v.voterAPIURL + "/voters/" + strconv.FormatUint(uint64(voterLocation), 10)
+	log.Println(voterURL)
+	var voter db.Voter
+
+	_, err = v.apiClient.R().SetResult(&voter).Get(voterURL)
+	if err != nil {
+		emsg := "Could not get voter from API: (" + voterURL + ")" + err.Error()
+		c.JSON(http.StatusNotFound, gin.H{"error": emsg})
+		return
+	}
+
+	c.JSON(http.StatusOK, voter)
+
+}
+
+func (v *VoteAPI) GetPollByVote(c *gin.Context) {
+
+	voteId := c.Param("id")
+	if voteId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No vote ID provided"})
+		return
+	}
+
+	cacheKey := "vote:" + voteId
+	var v1 db.Vote
+	err := v.getItemFromRedis(cacheKey, &v1)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Could not find vote in cache with id=" + cacheKey})
+		return
+	}
+
+	pollLocation := v1.PollID
+
+	// pollURL := v.pollAPIURL + "/polls/" + string(pollLocation)
+	pollURL := v.pollAPIURL + "/polls/" + strconv.FormatUint(uint64(pollLocation), 10)
+	log.Println(pollURL)
+	var poll db.Poll
+
+	_, err = v.apiClient.R().SetResult(&poll).Get(pollURL)
+	if err != nil {
+		emsg := "Could not get voter from API: (" + pollURL + ")" + err.Error()
+		c.JSON(http.StatusNotFound, gin.H{"error": emsg})
+		return
+	}
+
+	c.JSON(http.StatusOK, poll)
+}
+
+// func (v *VoteAPI) GetAllVotersByVote(c *gin.Context) {
+// 	voteId := c.Param("id")
+// 	if voteId == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "No vote ID provided"})
+// 		return
+// 	}
+
+// 	cacheKey := "vote:" + voteId
+// 	var v1 db.Vote
+// 	err := v.getItemFromRedis(cacheKey, &v1)
+// 	if err != nil {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": "Could not find vote in cache with id=" + cacheKey})
+// 		return
+// 	}
+
+// 	pollID := v1.PollID
+
+// 	var voteList []uint
+// 	var voteItem db.Vote
+// 	votePattern := "vote:*"
+// 	voteKs, _ := v.client.Keys(v.context, votePattern).Result()
+// 	for _, key := range voteKs {
+// 		err := v.getItemFromRedis(key, &voteItem)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find reading list in cache with id=" + key})
+// 			return
+// 		}
+
+// 		if voteItem.PollID == pollID {
+// 			voteList = append(voteList, voteItem.VoterID)
+// 		}
+
+// 	}
+
+// 	var voterList []db.Voter
+// 	for _, id := range voteList {
+// 		voterURL := v.voterAPIURL + "/voters/" + strconv.FormatUint(uint64(id), 10)
+// 		var voter db.Voter
+
+// 		_, err = v.apiClient.R().SetResult(&voter).Get(voterURL)
+// 		if err != nil {
+// 			emsg := "Could not get voter from API: (" + voterURL + ")" + err.Error()
+// 			c.JSON(http.StatusNotFound, gin.H{"error": emsg})
+// 			return
+// 		}
+
+// 		voterList = append(voterList, voter)
+
+// 	}
+
+// 	c.JSON(http.StatusOK, voterList)
+// }
+
+func (v *VoteAPI) GetAllVotes(c *gin.Context) {
 	var voteList []db.Vote
 	var voteItem db.Vote
 
 	//Lets query redis for all of the items
-	voterPattern := "voterlist:*"
-	voterKs, _ := v.client.Keys(v.context, voterPattern).Result()
-	for _, key := range voterKs {
+	votePattern := "vote:*"
+	voteKs, _ := v.client.Keys(v.context, votePattern).Result()
+	for _, key := range voteKs {
 		err := v.getItemFromRedis(key, &voteItem)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find reading list in cache with id=" + key})
@@ -108,17 +231,6 @@ func (v *VoteAPI) GetAllVotes(c *gin.Context) {
 		}
 		voteList = append(voteList, voteItem)
 	}
-
-	// pollPattern := "polllist:*"
-	// pollKs, _ := v.client.Keys(v.context, pollPattern).Result()
-	// for _, key := range pollKs {
-	// 	err := v.getItemFromRedis(key, &voteItem)
-	// 	if err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find reading list in cache with id=" + key})
-	// 		return
-	// 	}
-	// 	voteList = append(voteList, voteItem)
-	// }
 
 	c.JSON(http.StatusOK, voteList)
 }

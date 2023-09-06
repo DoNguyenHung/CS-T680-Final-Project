@@ -19,110 +19,53 @@ help:
 	@echo "	   build-amd64-linux	Build amd64/Linux executable"
 	@echo "	   build-arm64-linux	Build arm64/Linux executable"
 
-.PHONY: start-redis
-start-redis:
-	./poll-api/start-redis.sh
-
-# Poll-API
+# Build Poll-API
 .PHONY: build-poll-container
 build-poll-container:
 	cd poll-api/ && ./build-basic-docker.sh
 
-.PHONY: run-poll-container
-run-poll-container:
-	./poll-api/run-basic-docker.sh
-
-.PHONY: load-poll-cache
-load-poll-cache:
-	cd poll-api/ && ./loadcache.sh
-
-# Voter-API
+# Build Voter-API
 .PHONY: build-voter-container
 build-voter-container:
 	cd voter-api/ && ./build-basic-docker.sh
 
-.PHONY: run-voter-container
-run-voter-container:
-	./voter-api/run-basic-docker.sh
+# Build Votes-API 
+.PHONY: build-votes-container
+build-votes-container:
+	cd votes-api && ./build-basic-docker.sh
+
+# Run containers
+.PHONY: docker-compose
+docker-compose:
+	docker compose up
+
+# Load cache for poll, voter, and votes
+.PHONY: load-poll-cache
+load-poll-cache:
+	cd poll-api/ && ./loadcache.sh
 
 .PHONY: load-voter-cache
 load-voter-cache:
 	./voter-api/loadcache.sh
 
-# Votes-API 
-.PHONY: build-votes-container
-build-votes-container:
-	cd votes-api && ./build-basic-docker.sh
-
-.PHONY: run-votes-container
-run-votes-container:
-	./votes-api/run-basic-docker.sh
-
 .PHONY: load-votes-cache
 load-votes-cache:
 	./votes-api/loadcache.sh
 
-.PHONY: docker-compose
-docker-compose:
-	docker compose up
-
-#
+# Votes methods
 .PHONY: get-all-votes
 get-all-votes:
-	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1080/votes
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1082/votes
+
+.PHONY: get-vote
+get-vote:
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1082/votes/$(id)
+
+.PHONY: get-voter-by-vote
+get-voter-by-vote:
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1082/votes/$(id)/voters/
 
 # make get-by-id id=2
-.PHONY: get-vote-by-voter
-get-vote-by-voter:
-	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1080/voters/$(id)
-
-# # make get-by-id id=2
-# .PHONY: get-by-id
-# get-by-id:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1080/voters/$(id)
-
-# .PHONY: get-all
-# get-all:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1080/voters 
-
-# # make get-by-id id=2
-# .PHONY: get-voter-history
-# get-voter-history:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1080/voters/$(id)/polls
-
-# .PHONY: get-voter-poll
-# get-voter-poll:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1080/voters/$(id)/polls/$(pollid)
-
-# .PHONY: get-health
-# get-health:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1080/voters/health
-
-# .PHONY: add-voter-poll
-# add-voter-poll:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X POST http://localhost:1080/voters/$(id)/polls/$(pollid)
-
-# # Extra credit
-# .PHONY: delete-all
-# delete-all:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X DELETE http://localhost:1080/voters 
-
-# .PHONY: delete-by-id
-# delete-by-id:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X DELETE http://localhost:1080/voters/$(id) 
-
-# .PHONY: delete-by-pollid
-# delete-by-pollid:
-# 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X DELETE http://localhost:1080/voters/$(id)/polls/$(pollid)
-
-# .PHONY: update-1
-# update-1:
-# 	curl -d '{ "VoterId": 1, "FirstName": "$(fn)", "LastName": "$(ln)", "VoteHistory": [{"PollID": 59231, "VoteDate": "2021-08-15T14:30:45.00Z"}] }' -H "Content-Type: application/json" -X PUT http://localhost:1080/voters
-
-# .PHONY: update-2
-# update-2:
-# 	curl -d '{ "VoterId": 2, "FirstName": "$(fn)", "LastName": "$(ln)", "VoteHistory": [{"PollID": 12345, "VoteDate": "2021-08-16T14:30:45.00Z"}] }' -H "Content-Type: application/json" -X PUT http://localhost:1080/voters
-
-# .PHONY: update-3
-# update-3:
-# 	curl -d '{ "VoterId": 3, "FirstName": "$(fn)", "LastName": "$(ln)", "VoteHistory": [{"PollID": 54321, "VoteDate": "2021-08-17T14:30:45.00Z"}] }' -H "Content-Type: application/json" -X PUT http://localhost:1080/voters
+.PHONY: get-poll-by-vote
+get-poll-by-vote:
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1082/votes/$(id)/polls/

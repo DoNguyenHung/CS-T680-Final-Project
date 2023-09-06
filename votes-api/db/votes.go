@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/nitishm/go-rejson/v4"
@@ -29,11 +30,35 @@ type cache struct {
 	context     context.Context
 }
 
+type pollOption struct {
+	PollOptionID   uint   `json:"pollOptionId"`
+	PollOptionText string `json:"pollOptionText"`
+}
+
+type Poll struct {
+	PollID       uint         `json:"pollId"`
+	PollTitle    string       `json:"pollTitle"`
+	PollQuestion string       `json:"pollQuestion"`
+	PollOptions  []pollOption `json:"pollOptions"`
+}
+
+type voterPoll struct {
+	PollID   uint      `json:"pollid"`
+	VoteDate time.Time `json:"votedate"`
+}
+
+type Voter struct {
+	VoterId     uint        `json:"id"`
+	FirstName   string      `json:"firstname"`
+	LastName    string      `json:"lastname"`
+	VoteHistory []voterPoll `json:"votehistory"`
+}
+
 type Vote struct {
-	VoteID    uint   `json:"voteId"`
-	VoterID   string `json:"voterId"`
-	PollID    string `json:"pollId"`
-	VoteValue uint   `json:"voteValue"`
+	VoteID    uint `json:"voteId"`
+	VoterID   uint `json:"voterId"`
+	PollID    uint `json:"pollId"`
+	VoteValue uint `json:"voteValue"`
 }
 
 type VoteList struct {
@@ -47,7 +72,8 @@ type VoteList struct {
 // THESE ARE THE PUBLIC FUNCTIONS THAT SUPPORT OUR TODO APP
 //------------------------------------------------------------
 
-func NewSampleVote(voteId uint, pollId string, voterId string, voteValue uint) *Vote {
+// func NewSampleVote(voteId uint, pollId string, voterId string, voteValue uint) *Vote {
+func NewSampleVote(voteId uint, pollId uint, voterId uint, voteValue uint) *Vote {
 	return &Vote{
 		VoteID:    voteId,
 		PollID:    pollId,

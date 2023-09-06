@@ -13,8 +13,9 @@ import (
 )
 
 // TODO:
-//			GetAllVoters
-//			GetVoteByVoter
+//			Add more data
+//			Makefile help method
+//			Documentation
 
 // Global variables to hold the command line flags to drive the todo CLI
 // application
@@ -89,7 +90,9 @@ func main() {
 
 	r.POST("/votes/:id", apiHandler.AddVote)
 	r.GET("/votes", apiHandler.GetAllVotes)
-	r.GET("/votes/:id", apiHandler.GetVoteByVoter)
+	r.GET("/votes/:id", apiHandler.GetVote)
+	r.GET("/votes/:id/voters/", apiHandler.GetVoterByVote)
+	r.GET("/votes/:id/polls/", apiHandler.GetPollByVote)
 
 	//For now we will just support gets
 	serverPath := fmt.Sprintf("%s:%d", hostFlag, portFlag)
