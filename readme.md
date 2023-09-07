@@ -35,6 +35,8 @@ In other words, for example, run the make commands in the following order:
       make get-vote id=1
       make get-voter-by-vote id=1
       make get-poll-by-vote id=1
+
+      make delete-all-resources
 ```
 
 Please email me if you have any questions/problems running my code: hd386@cs.drexel.edu

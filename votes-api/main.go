@@ -12,9 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TODO:
-//			Input handling
-
 // Global variables to hold the command line flags to drive the todo CLI
 // application
 var (
@@ -26,9 +23,6 @@ var (
 )
 
 func processCmdLineFlags() {
-	// flag.StringVar(&hostFlag, "h", "0.0.0.0", "Listen on all interfaces")
-	// flag.UintVar(&portFlag, "p", 3080, "Default Port")
-
 	flag.StringVar(&hostFlag, "h", "0.0.0.0", "Listen on all interfaces")
 	flag.StringVar(&voterAPIURL, "voterapi", "http://localhost:1080", "Default endpoint for Voter API")
 	flag.StringVar(&pollAPIURL, "pollapi", "http://localhost:1080", "Default endpoint for Poll API")
@@ -91,6 +85,7 @@ func main() {
 	r.GET("/votes/:id", apiHandler.GetVote)
 	r.GET("/votes/:id/voters/", apiHandler.GetVoterByVote)
 	r.GET("/votes/:id/polls/", apiHandler.GetPollByVote)
+	r.DELETE("/votes", apiHandler.DeleteAllVotes)
 
 	//For now we will just support gets
 	serverPath := fmt.Sprintf("%s:%d", hostFlag, portFlag)

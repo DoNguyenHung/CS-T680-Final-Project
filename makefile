@@ -116,3 +116,14 @@ get-voter-by-vote:
 .PHONY: get-poll-by-vote
 get-poll-by-vote:
 	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X GET http://localhost:1082/votes/$(id)/polls/
+
+.PHONY: delete-all-votes
+delete-all-votes:
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X DELETE http://localhost:1082/votes
+
+# Delete all
+.PHONY: delete-all-resources
+delete-all-resources:
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X DELETE http://localhost:1080/polls
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X DELETE http://localhost:1081/voters
+	curl -w "HTTP Status: %{http_code}\n" -H "Content-Type: application/json" -X DELETE http://localhost:1082/votes

@@ -99,12 +99,6 @@ func (v *VoteAPI) GetVoterByVote(c *gin.Context) {
 		return
 	}
 
-	// voterId := c.Param("voterid")
-	// if voterId == "" {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
-	// 	return
-	// }
-
 	cacheKey := "vote:" + voteId
 	var v1 db.Vote
 	err := v.getItemFromRedis(cacheKey, &v1)
@@ -163,59 +157,6 @@ func (v *VoteAPI) GetPollByVote(c *gin.Context) {
 	c.JSON(http.StatusOK, poll)
 }
 
-// func (v *VoteAPI) GetAllVotersByVote(c *gin.Context) {
-// 	voteId := c.Param("id")
-// 	if voteId == "" {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "No vote ID provided"})
-// 		return
-// 	}
-
-// 	cacheKey := "vote:" + voteId
-// 	var v1 db.Vote
-// 	err := v.getItemFromRedis(cacheKey, &v1)
-// 	if err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Could not find vote in cache with id=" + cacheKey})
-// 		return
-// 	}
-
-// 	pollID := v1.PollID
-
-// 	var voteList []uint
-// 	var voteItem db.Vote
-// 	votePattern := "vote:*"
-// 	voteKs, _ := v.client.Keys(v.context, votePattern).Result()
-// 	for _, key := range voteKs {
-// 		err := v.getItemFromRedis(key, &voteItem)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find reading list in cache with id=" + key})
-// 			return
-// 		}
-
-// 		if voteItem.PollID == pollID {
-// 			voteList = append(voteList, voteItem.VoterID)
-// 		}
-
-// 	}
-
-// 	var voterList []db.Voter
-// 	for _, id := range voteList {
-// 		voterURL := v.voterAPIURL + "/voters/" + strconv.FormatUint(uint64(id), 10)
-// 		var voter db.Voter
-
-// 		_, err = v.apiClient.R().SetResult(&voter).Get(voterURL)
-// 		if err != nil {
-// 			emsg := "Could not get voter from API: (" + voterURL + ")" + err.Error()
-// 			c.JSON(http.StatusNotFound, gin.H{"error": emsg})
-// 			return
-// 		}
-
-// 		voterList = append(voterList, voter)
-
-// 	}
-
-// 	c.JSON(http.StatusOK, voterList)
-// }
-
 func (v *VoteAPI) GetAllVotes(c *gin.Context) {
 	var voteList []db.Vote
 	var voteItem db.Vote
@@ -256,6 +197,19 @@ func (v *VoteAPI) getItemFromRedis(key string, rl *db.Vote) error {
 	}
 
 	return nil
+}
+
+// implementation for DELETE /todo
+// deletes all todos
+func (v *VoteAPI) DeleteAllVotes(c *gin.Context) {
+
+	if err := v.db.DeleteAll(); err != nil {
+		log.Println("Error deleting all items: ", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 // implementation for POST /todo

@@ -385,7 +385,6 @@ func (lst *VoterList) AddVoterPollData(voterId uint, pollId uint) error {
 	}
 	currentVoter.VoteHistory = append(currentVoter.VoteHistory, newPoll)
 
-	// lst.Voters[voterId] = currentVoter
 	//Add item to database with JSON Set
 	redisKey := redisKeyFromId(int(voterId))
 	if _, err := lst.jsonHelper.JSONSet(redisKey, ".", currentVoter); err != nil {
@@ -414,9 +413,6 @@ func (lst *VoterList) DeletePoll(voterId uint, pollId uint) error {
 
 	currentVoter.VoteHistory = append(currentVoter.VoteHistory[:index], currentVoter.VoteHistory[index+1:]...)
 
-	// lst.Voters[voterId] = currentVoter
-	//Add item to database with JSON Set
-	// TODO: How to override voter here?
 	redisKey := redisKeyFromId(int(voterId))
 	if _, err := lst.jsonHelper.JSONSet(redisKey, ".", currentVoter); err != nil {
 		return err
