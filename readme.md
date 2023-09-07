@@ -2,9 +2,9 @@
 
 My name's Hung and this is my CS-T680 Final Project submission.
 
-In order to run the project, you can go to the makefile and run every single command in order from top to bottom. This includes building the containers, running them using docker compose, loading the cache, and testing out the voter, poll, and vote methods to look for intra-API dependencies.
+In order to run the project, you can go to the makefile and run every single command in order from top to bottom. This includes building the containers, running them using docker compose, loading the cache, and testing out the voter, poll methods. Finally, there are the vote methods to look for intra-API dependencies.
 
-In other words, run the make commands in the following order: 
+In other words, for example, run the make commands in the following order: 
 
 ```
       make build-poll-container
@@ -16,8 +16,8 @@ In other words, run the make commands in the following order:
 	  make load-votes-cache
       make get-all-votes
       make get-vote id=1
-      make get-voter-by-vote id=1 voterid=1
-      make get-poll-by-vote id=1 pollid=1
+      make get-voter-by-vote id=1
+      make get-poll-by-vote id=1
 
 ```
 

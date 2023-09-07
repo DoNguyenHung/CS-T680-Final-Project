@@ -64,6 +64,10 @@ func (p *PollAPI) GetSinglePollResource(c *gin.Context) {
 	//id parameter using the Param() function, and then
 	//convert it to an int64 using the strconv package
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No poll ID provided"})
+		return
+	}
 	id64, err := strconv.ParseInt(idS, 10, 32)
 	if err != nil {
 		log.Println("Error converting id to int64: ", err)
@@ -121,6 +125,10 @@ func (p *PollAPI) AddPoll(c *gin.Context) {
 // deletes a todo
 func (p *PollAPI) DeletePoll(c *gin.Context) {
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No poll ID provided"})
+		return
+	}
 	id64, _ := strconv.ParseInt(idS, 10, 32)
 
 	if err := p.db.DeletePoll(uint(id64)); err != nil {

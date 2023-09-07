@@ -64,6 +64,10 @@ func (v *VoterAPI) GetSingleVoterResource(c *gin.Context) {
 	//id parameter using the Param() function, and then
 	//convert it to an int64 using the strconv package
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+		return
+	}
 	id64, err := strconv.ParseInt(idS, 10, 32)
 	if err != nil {
 		log.Println("Error converting id to int64: ", err)
@@ -91,6 +95,10 @@ func (v *VoterAPI) GetVoterHistory(c *gin.Context) {
 	//id parameter using the Param() function, and then
 	//convert it to an int64 using the strconv package
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+		return
+	}
 	id64, err := strconv.ParseInt(idS, 10, 32)
 	if err != nil {
 		log.Println("Error converting id to int64: ", err)
@@ -118,7 +126,15 @@ func (v *VoterAPI) GetVoterPollData(c *gin.Context) {
 	//id parameter using the Param() function, and then
 	//convert it to an int64 using the strconv package
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+		return
+	}
 	idP := c.Param("pollid")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No poll ID provided"})
+		return
+	}
 	id64_1, err_1 := strconv.ParseInt(idS, 10, 32)
 	id64_2, err_2 := strconv.ParseInt(idP, 10, 32)
 	if err_1 != nil {
@@ -153,7 +169,15 @@ func (v *VoterAPI) AddVoterPollData(c *gin.Context) {
 	//id parameter using the Param() function, and then
 	//convert it to an int64 using the strconv package
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+		return
+	}
 	idP := c.Param("pollid")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No poll ID provided"})
+		return
+	}
 	id64_1, err_1 := strconv.ParseInt(idS, 10, 32)
 	id64_2, err_2 := strconv.ParseInt(idP, 10, 32)
 	if err_1 != nil {
@@ -184,7 +208,15 @@ func (v *VoterAPI) DeletePoll(c *gin.Context) {
 	//id parameter using the Param() function, and then
 	//convert it to an int64 using the strconv package
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+		return
+	}
 	idP := c.Param("pollid")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No poll ID provided"})
+		return
+	}
 	id64_1, err_1 := strconv.ParseInt(idS, 10, 32)
 	id64_2, err_2 := strconv.ParseInt(idP, 10, 32)
 	if err_1 != nil {
@@ -264,6 +296,10 @@ func (v *VoterAPI) UpdateVoter(c *gin.Context) {
 // deletes a todo
 func (v *VoterAPI) DeleteVoter(c *gin.Context) {
 	idS := c.Param("id")
+	if idS == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No voter ID provided"})
+		return
+	}
 	id64, _ := strconv.ParseInt(idS, 10, 32)
 
 	if err := v.db.DeleteVoter(uint(id64)); err != nil {

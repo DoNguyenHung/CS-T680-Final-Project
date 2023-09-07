@@ -13,9 +13,7 @@ import (
 )
 
 // TODO:
-//			Add more data
-//			Makefile help method
-//			Documentation
+//			Input handling
 
 // Global variables to hold the command line flags to drive the todo CLI
 // application
