@@ -13,7 +13,7 @@ In other words, for example, run the make commands in the following order:
       make docker-compose
       make load-poll-cache
       make load-voter-cache
-	make load-votes-cache
+      make load-votes-cache
 
       make get-poll-by-id id=1
       make get-all-polls
