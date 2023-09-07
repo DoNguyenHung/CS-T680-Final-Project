@@ -39,4 +39,6 @@ In other words, for example, run the make commands in the following order:
       make delete-all-resources
 ```
 
+One final note is that I will be away on Friday for my friend's bachelor's party, but I will keep a close look at my email over the weekend. Thank you for your patience.
+
 Please email me if you have any questions/problems running my code: hd386@cs.drexel.edu
