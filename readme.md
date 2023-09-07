@@ -2,7 +2,9 @@
 
 My name's Hung and this is my CS-T680 Final Project submission.
 
-In order to run the project, you can go to the makefile and run every single command in order from top to bottom. This includes building the containers, running them using docker compose, loading the cache, and testing out any of the voter and poll methods. Finally, there are the vote methods to look for intra-API dependencies. I used Git bash to run my make commands so please contact me if you aren't able to run via Unix.
+In order to run the project, you can go to the makefile and run every single command in order from top to bottom. This includes building the containers, running them using docker compose, loading the cache, and testing out any of the voter and poll methods. Finally, there are the vote methods to look for intra-API dependencies. 
+
+I used Git bash to run my make commands so please contact me if you aren't able to run via Unix. Additionally, I don't have any scripts that are used to point out specific errors, but, for example, if you want to test a duplicate voter, you can simply use the delete-voter-by-id command to get rid of any voter and then rerun the load-voter-cache method. You'll see that the voters that aren't deleted will have errors showing duplication. 
 
 You can view cache as you run by using this link: http://localhost:8001/redis-stack/browser
 
